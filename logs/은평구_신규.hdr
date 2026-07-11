@@ -1,0 +1,18 @@
+HTTP/1.1 200 OK
+Server: 
+Date: Fri, 10 Jul 2026 09:15:02 GMT
+Content-Type: application/octet-stream; charset=UTF-8
+Content-Length: 430274264
+Connection: keep-alive
+X-Frame-Options: SAMEORIGIN
+Strict-Transport-Security: max-age=63072000; includeSubdomains; preload
+Set-Cookie: C_VX_User=tv9qu4r3teukdmjauuerks7foa; path=/; secure; HttpOnly
+Expires: 0
+Cache-Control: private
+Pragma: private
+Set-Cookie: C_VX_UseLang=deleted; expires=Thu, 01-Jan-1970 00:00:01 GMT; Max-Age=0; path=/; domain=webhard.i-sh.co.kr; secure
+Content-Disposition: attachment; filename="은평구(신규).zip"
+Content-Transfer-Encoding: binary
+X-Content-Type-Options: nosniff
+X-XSS-Protection: 1; mode=block
+

@@ -1,0 +1,18 @@
+HTTP/1.1 200 OK
+Server: 
+Date: Fri, 10 Jul 2026 09:18:21 GMT
+Content-Type: application/octet-stream; charset=UTF-8
+Content-Length: 19005568
+Connection: keep-alive
+X-Frame-Options: SAMEORIGIN
+Strict-Transport-Security: max-age=63072000; includeSubdomains; preload
+Set-Cookie: C_VX_User=q0bmfkb6hna9ti0kdjts9gsr11; path=/; secure; HttpOnly
+Expires: 0
+Cache-Control: private
+Pragma: private
+Set-Cookie: C_VX_UseLang=deleted; expires=Thu, 01-Jan-1970 00:00:01 GMT; Max-Age=0; path=/; domain=webhard.i-sh.co.kr; secure
+Content-Disposition: attachment; filename="중구(재공급).zip"
+Content-Transfer-Encoding: binary
+X-Content-Type-Options: nosniff
+X-XSS-Protection: 1; mode=block
+

@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SH 청년안심주택 2026-1차 뷰어</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<style>
+:root{
+  --bg:#f4f5f7; --panel:#ffffff; --ink:#1a1d21; --muted:#6b7280; --line:#e5e7eb;
+  --brand:#2563eb; --brand-soft:#eff4ff; --new:#0e9f6e; --re:#d97706;
+  --chip:#eef1f5; --shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.04);
+}
+@media (prefers-color-scheme:dark){
+  :root{ --bg:#15171c; --panel:#1e2128; --ink:#e8eaed; --muted:#9aa1ac; --line:#2c3038;
+         --brand:#60a5fa; --brand-soft:#1c2740; --chip:#262a32; --shadow:0 1px 3px rgba(0,0,0,.4); }
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font-family:"Apple SD Gothic Neo","Pretendard",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  background:var(--bg); color:var(--ink); font-size:14px; line-height:1.45; -webkit-font-smoothing:antialiased;}
+#app{display:grid; grid-template-columns:360px 1fr; height:100vh; overflow:hidden}
+
+/* ---------- Sidebar ---------- */
+#sidebar{background:var(--panel); border-right:1px solid var(--line); display:flex; flex-direction:column; min-height:0}
+.side-head{padding:16px 18px 10px}
+.side-head h1{font-size:16px; margin:0 0 3px; letter-spacing:-.2px}
+.side-head .sub{color:var(--muted); font-size:12px}
+.filters{padding:6px 14px 10px; border-bottom:1px solid var(--line); display:flex; flex-direction:column; gap:8px}
+.seg{display:flex; gap:6px}
+.seg button{flex:1; padding:6px 8px; border:1px solid var(--line); background:transparent; color:var(--ink);
+  border-radius:8px; cursor:pointer; font-size:12.5px; font-weight:600}
+.seg button.on{background:var(--brand); border-color:var(--brand); color:#fff}
+.row2{display:flex; gap:6px}
+.filters select,.filters input{width:100%; padding:7px 9px; border:1px solid var(--line); border-radius:8px;
+  background:var(--bg); color:var(--ink); font-size:13px}
+.chkline{display:flex; align-items:center; gap:6px; font-size:12.5px; color:var(--muted); cursor:pointer; user-select:none}
+.count{padding:6px 18px; font-size:12px; color:var(--muted)}
+#list{flex:1; overflow-y:auto; min-height:0; padding:0 8px 20px}
+.gu-group{margin-top:6px}
+.gu-label{position:sticky; top:0; background:var(--panel); padding:6px 10px 4px; font-size:11px; font-weight:700;
+  color:var(--muted); letter-spacing:.5px; z-index:1}
+.item{padding:9px 11px; border-radius:10px; cursor:pointer; border:1px solid transparent; margin:2px 0}
+.item:hover{background:var(--brand-soft)}
+.item.sel{background:var(--brand-soft); border-color:var(--brand)}
+.item .t{display:flex; align-items:center; gap:6px; font-weight:600; font-size:13.5px; letter-spacing:-.2px}
+.item .m{color:var(--muted); font-size:11.5px; margin-top:2px; display:flex; gap:8px; flex-wrap:wrap}
+.item .price{font-size:12px; margin-top:3px; color:var(--ink)}
+.item .price b{color:var(--brand)}
+.badge{font-size:10px; font-weight:700; padding:1.5px 6px; border-radius:20px; color:#fff; white-space:nowrap}
+.badge.new{background:var(--new)} .badge.re{background:var(--re)}
+.pill{font-size:10.5px; color:var(--muted); background:var(--chip); padding:1px 7px; border-radius:20px}
+
+/* ---------- Detail ---------- */
+#detail{display:flex; flex-direction:column; min-width:0; min-height:0}
+#map{height:300px; flex:none; background:var(--chip)}
+#content{flex:1; overflow-y:auto; min-height:0; padding:20px 26px 60px}
+.welcome{max-width:560px; margin:8vh auto; text-align:center; color:var(--muted)}
+.welcome h2{color:var(--ink); font-size:20px}
+.dhead{display:flex; align-items:flex-start; gap:12px; flex-wrap:wrap}
+.dhead h2{margin:0; font-size:20px; letter-spacing:-.4px}
+.dhead .addr{color:var(--muted); font-size:13px; margin-top:4px}
+.dmeta{display:flex; gap:8px; flex-wrap:wrap; margin:12px 0 4px}
+.stat{background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:8px 12px; box-shadow:var(--shadow)}
+.stat .k{font-size:11px; color:var(--muted)} .stat .v{font-size:15px; font-weight:700}
+.actions{display:flex; gap:8px; flex-wrap:wrap; margin:14px 0}
+.btn{display:inline-flex; align-items:center; gap:6px; padding:8px 13px; border-radius:9px; text-decoration:none;
+  font-size:13px; font-weight:600; border:1px solid var(--line); color:var(--ink); background:var(--panel); cursor:pointer}
+.btn.primary{background:#03c75a; border-color:#03c75a; color:#fff}   /* naver green */
+.btn.doc{background:var(--brand-soft); border-color:var(--brand); color:var(--brand)}
+h3.sec{font-size:14px; margin:22px 0 10px; padding-bottom:6px; border-bottom:1px solid var(--line)}
+.gallery{display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:8px}
+.gallery img{width:100%; height:120px; object-fit:cover; border-radius:8px; cursor:zoom-in; background:var(--chip); border:1px solid var(--line)}
+.nomedia{color:var(--muted); font-size:13px; padding:8px 0}
+
+/* price table */
+.tablewrap{overflow-x:auto; border:1px solid var(--line); border-radius:10px}
+table{border-collapse:collapse; width:100%; font-size:12.5px; min-width:720px}
+th,td{padding:7px 9px; text-align:center; border-bottom:1px solid var(--line); white-space:nowrap}
+thead th{background:var(--chip); font-weight:700; position:sticky; top:0}
+.grouphd th{font-size:11px; color:var(--muted)}
+tbody tr:hover{background:var(--brand-soft)}
+td.left{text-align:left}
+.cell b{font-weight:700} .cell small{color:var(--muted); font-size:11px; display:block}
+.tier30{background:rgba(37,99,235,.05)} .tier50{background:rgba(217,119,6,.05)}
+.sx{font-size:10px; font-weight:700; padding:1px 5px; border-radius:5px}
+.sx.m{background:#dbeafe; color:#1d4ed8} .sx.f{background:#fce7f3; color:#be185d}
+
+/* lightbox */
+#lb{position:fixed; inset:0; background:rgba(0,0,0,.9); display:none; align-items:center; justify-content:center; z-index:9999}
+#lb.show{display:flex}
+#lb img{max-width:92vw; max-height:88vh; border-radius:6px}
+#lb .nav{position:absolute; top:50%; transform:translateY(-50%); font-size:40px; color:#fff; cursor:pointer; padding:0 20px; user-select:none; opacity:.8}
+#lb .nav:hover{opacity:1} #lb .prev{left:0} #lb .next{right:0}
+#lb .close{position:absolute; top:16px; right:22px; font-size:30px; color:#fff; cursor:pointer}
+#lb .cap{position:absolute; bottom:18px; color:#fff; font-size:12px; opacity:.8}
+
+/* highlighted (selected) map pin */
+.selpin{background:none;border:none}
+.selpin i{display:block;width:20px;height:20px;border-radius:50%;background:#ef4444;border:3px solid #fff;
+  box-shadow:0 0 0 4px rgba(239,68,68,.35),0 2px 7px rgba(0,0,0,.5); animation:pulse 1.6s ease-out infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 3px rgba(239,68,68,.5),0 2px 7px rgba(0,0,0,.5)}
+  70%{box-shadow:0 0 0 12px rgba(239,68,68,0),0 2px 7px rgba(0,0,0,.5)}
+  100%{box-shadow:0 0 0 3px rgba(239,68,68,0),0 2px 7px rgba(0,0,0,.5)}}
+.mobile-toggle{display:none}
+@media (max-width:820px){
+  #app{grid-template-columns:1fr}
+  #sidebar{position:fixed; inset:0 40% 0 0; z-index:50; transform:translateX(-100%); transition:.25s; width:80%}
+  #sidebar.open{transform:none}
+  .mobile-toggle{display:inline-flex; position:fixed; z-index:60; top:10px; left:10px; background:var(--brand); color:#fff;
+    border:none; border-radius:8px; padding:8px 12px; font-weight:700}
+  #map{height:220px}
+}
+</style>
+</head>
+<body>
+<button class="mobile-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">☰ 목록</button>
+<div id="app">
+  <aside id="sidebar">
+    <div class="side-head">
+      <h1>SH 청년안심주택 · 2026년 1차</h1>
+      <div class="sub" id="metaline">불러오는 중…</div>
+    </div>
+    <div class="filters">
+      <div class="seg" id="segGubun">
+        <button data-v="all" class="on">전체</button>
+        <button data-v="신규공급">신규공급</button>
+        <button data-v="재공급">재공급</button>
+      </div>
+      <div class="row2">
+        <select id="fGu"><option value="all">전체 자치구</option></select>
+        <select id="fSort">
+          <option value="gu">자치구순</option>
+          <option value="priceAsc">보증금 낮은순</option>
+          <option value="priceDesc">보증금 높은순</option>
+          <option value="areaDesc">면적 넓은순</option>
+          <option value="units">호수 많은순</option>
+        </select>
+      </div>
+      <input id="fQ" placeholder="🔍 주택명·주소·동 검색">
+      <label class="chkline"><input type="checkbox" id="fPhoto"> 사진 있는 곳만</label>
+    </div>
+    <div class="count" id="countline"></div>
+    <div id="list"></div>
+  </aside>
+  <main id="detail">
+    <div id="map"></div>
+    <div id="content"></div>
+  </main>
+</div>
+<div id="lb">
+  <span class="close" onclick="LB.hide()">✕</span>
+  <span class="nav prev" onclick="LB.step(-1)">‹</span>
+  <img id="lbimg" src="">
+  <span class="nav next" onclick="LB.step(1)">›</span>
+  <div class="cap" id="lbcap"></div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="data.js"></script>
+<script>
+const D = window.DATA || [], M = window.META || {};
+const state = {gubun:"all", gu:"all", q:"", photo:false, sort:"gu", sel:null};
+
+/* ---------- helpers ---------- */
+const uri = p => p.split("/").map(encodeURIComponent).join("/");
+const won = n => n==null ? "—" : n.toLocaleString("ko-KR");
+const man = n => n==null ? "—" : (Math.round(n/1000)/10).toLocaleString("ko-KR")+"만";
+const manInt = n => n==null ? "—" : Math.round(n/10000).toLocaleString("ko-KR")+"만";
+function bMinBoseung(b){ // 청년 1순위 보증금 최소
+  const xs=b.units.map(u=>u.가격["1순위_청년"].보증금).filter(x=>x!=null); return xs.length?Math.min(...xs):null;
+}
+function bMinWolse(b){ const xs=b.units.map(u=>u.가격["1순위_청년"].임대료).filter(x=>x!=null); return xs.length?Math.min(...xs):null; }
+const gubunBadge = g => g==="신규공급" ? '<span class="badge new">신규</span>' : '<span class="badge re">재공급</span>';
+
+/* ---------- map ---------- */
+let map, layer, markers={};
+const SELICON = L.divIcon({className:"selpin", html:"<i></i>", iconSize:[26,26], iconAnchor:[13,13]});
+function initMap(){
+  map = L.map("map",{zoomControl:true, scrollWheelZoom:true}).setView([37.5665,126.978],11);
+  L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",{
+    attribution:'&copy; OpenStreetMap &copy; CARTO', maxZoom:19}).addTo(map);
+  layer = L.layerGroup().addTo(map);
+}
+// 지도는 항상 전체 핀을 표시(필터는 목록만 좁힘). 선택 건물만 강조 + 최상단.
+function renderMarkers(){
+  layer.clearLayers(); markers={};
+  D.forEach(b=>{
+    if(!b.lat) return;
+    const sel = b.id===state.sel;
+    const mk = L.marker([b.lat,b.lng], sel?{icon:SELICON, zIndexOffset:1000, riseOnHover:true}:{riseOnHover:true})
+      .addTo(layer).bindTooltip(b.주택명)
+      .bindPopup("<b>"+esc(b.주택명)+"</b><br>"+b.구+" "+esc(b.도로명));
+    mk.on("click",()=>select(b.id));
+    markers[b.id]=mk;
+  });
+}
+function overview(){                        // 전체 핀을 화면에 맞춤(항상 서울 전역)
+  renderMarkers();
+  const pts=D.filter(b=>b.lat).map(b=>[b.lat,b.lng]);
+  if(pts.length) map.fitBounds(pts,{padding:[40,40], maxZoom:14});
+}
+function focusSelected(b){                  // keep every pin; highlight + reveal selected
+  renderMarkers();
+  const mk=markers[b.id];
+  if(mk){ if(b.lat) map.panInside([b.lat,b.lng],{padding:[50,50]}); mk.openPopup(); }
+}
+
+/* ---------- sidebar list ---------- */
+function filtered(){
+  let a = D.filter(b=>{
+    if(state.gubun!=="all" && b.구분!==state.gubun) return false;
+    if(state.gu!=="all" && b.구!==state.gu) return false;
+    if(state.photo && !b.media.images.length) return false;
+    if(state.q){ const q=state.q.toLowerCase();
+      const hay=(b.주택명+" "+b.주소+" "+b.도로명+" "+b.주택명들.join(" ")+" "+b.구).toLowerCase();
+      if(!hay.includes(q)) return false; }
+    return true;
+  });
+  const s=state.sort;
+  if(s==="gu") a.sort((x,y)=> (x.구+x.구분).localeCompare(y.구+y.구분,"ko") || x.주택명.localeCompare(y.주택명,"ko"));
+  else if(s==="priceAsc") a.sort((x,y)=>(bMinBoseung(x)??9e15)-(bMinBoseung(y)??9e15));
+  else if(s==="priceDesc") a.sort((x,y)=>(bMinBoseung(y)??-1)-(bMinBoseung(x)??-1));
+  else if(s==="areaDesc") a.sort((x,y)=>y.면적_max-x.면적_max);
+  else if(s==="units") a.sort((x,y)=>y.호수-x.호수);
+  return a;
+}
+function renderList(){
+  const a=filtered(), list=document.getElementById("list");
+  document.getElementById("countline").textContent = a.length+"개 건물 · "+a.reduce((s,b)=>s+b.호수,0)+"호";
+  let html="", curGu=null;
+  const grouped = state.sort==="gu";
+  a.forEach(b=>{
+    if(grouped && b.구!==curGu){ curGu=b.구; html+=`<div class="gu-label">${curGu}</div>`; }
+    const bos=bMinBoseung(b), wol=bMinWolse(b);
+    const photo=b.media.images.length;
+    html+=`<div class="item ${state.sel===b.id?'sel':''}" onclick="select(${b.id})">
+      <div class="t">${gubunBadge(b.구분)} ${esc(b.주택명)}</div>
+      <div class="m"><span>${b.구}</span><span class="pill">${b.호수}호</span>
+        <span class="pill">${b.면적_min}~${b.면적_max}㎡</span>
+        ${photo?`<span class="pill">📷 ${photo}</span>`:``}</div>
+      <div class="price">청년 1순위 <b>보증 ${manInt(bos)}~</b> · 월 ${man(wol)}~</div>
+    </div>`;
+  });
+  list.innerHTML = html || `<div class="nomedia" style="padding:20px">조건에 맞는 건물이 없습니다.</div>`;
+}
+const esc = s => (s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+/* ---------- detail ---------- */
+const TIERS=[["1순위_청년","1순위·청년","tier30"],["1순위_대학생","1순위·대학생","tier30"],
+             ["2~3순위_청년","2~3순위·청년","tier50"],["2~3순위_대학생","2~3순위·대학생","tier50"]];
+function priceCell(u,key,cls){
+  const p=u.가격[key];
+  if(!p||p.보증금==null) return `<td class="${cls}">—</td>`;
+  return `<td class="cell ${cls}"><b>${manInt(p.보증금)}</b><small>월 ${man(p.임대료)}</small></td>`;
+}
+function renderDetail(b){
+  focusSelected(b);
+  const gal = b.media.images.length
+    ? `<div class="gallery">${b.media.images.map((p,i)=>`<img loading="lazy" src="${uri(p)}" onclick="LB.open(${b.id},${i})">`).join("")}</div>`
+    : `<div class="nomedia">📷 개별 사진 이미지 없음. ${b.media.sajin_pdfs.length||b.media.combined_pdfs.length?"아래 PDF에서 사진 확인 가능.":""}</div>`;
+  const docs=[];
+  b.media.domyeon_pdfs.forEach(p=>docs.push(`<a class="btn doc" href="${uri(p)}" target="_blank">📐 도면 PDF</a>`));
+  b.media.combined_pdfs.forEach(p=>docs.push(`<a class="btn doc" href="${uri(p)}" target="_blank">📄 도면·사진 PDF</a>`));
+  b.media.sajin_pdfs.forEach(p=>docs.push(`<a class="btn doc" href="${uri(p)}" target="_blank">🖼️ 사진 PDF</a>`));
+  b.media.others.forEach(p=>docs.push(`<a class="btn" href="${uri(p)}" target="_blank">📎 ${esc(p.split("/").pop())}</a>`));
+
+  const rows=b.units.map(u=>`<tr>
+     <td class="left">${esc(u.주택명!=="-"?u.주택명+" ":"")}<b>${u.호}</b></td>
+     <td>${u.주택형}</td><td>${u.전용면적}㎡</td><td>${esc(u.주택구조)}</td>
+     <td>${u.성별==="남성"?'<span class="sx m">남</span>':u.성별==="여성"?'<span class="sx f">여</span>':'-'}</td>
+     ${TIERS.map(([k,,cls])=>priceCell(u,k,cls)).join("")}
+   </tr>`).join("");
+
+  document.getElementById("content").innerHTML=`
+   <div class="dhead"><div>
+     <h2>${gubunBadge(b.구분)} ${esc(b.주택명)}</h2>
+     <div class="addr">${esc(b.주소||("서울특별시 "+b.구+" "+b.도로명))}</div>
+     ${b.주택명들.length>1?`<div class="addr">동: ${esc(b.주택명들.join(", "))}</div>`:``}
+   </div></div>
+   <div class="dmeta">
+     <div class="stat"><div class="k">세대(호)</div><div class="v">${b.호수}호</div></div>
+     <div class="stat"><div class="k">전용면적</div><div class="v">${b.면적_min}~${b.면적_max}㎡</div></div>
+     <div class="stat"><div class="k">주택구조</div><div class="v" style="font-size:13px">${esc(b.주택구조들.join(", "))}</div></div>
+     <div class="stat"><div class="k">청년1순위 보증금</div><div class="v">${manInt(bMinBoseung(b))}~</div></div>
+   </div>
+   <div class="actions">
+     <a class="btn primary" target="_blank" href="https://map.naver.com/p/search/${encodeURIComponent("서울특별시 "+b.구+" "+b.도로명)}">📍 네이버 지도에서 보기</a>
+     ${docs.join("")}
+   </div>
+   <h3 class="sec">사진 (${b.media.images.length})</h3>
+   ${gal}
+   <h3 class="sec">호별 보증금·임대료 (${b.호수}호)</h3>
+   <div class="tablewrap"><table>
+     <thead>
+       <tr><th rowspan="2" class="left">호</th><th rowspan="2">주택형</th><th rowspan="2">면적</th>
+           <th rowspan="2">구조</th><th rowspan="2">성별</th>
+           <th colspan="2" class="tier30">1순위 (시세 30%)</th><th colspan="2" class="tier50">2~3순위 (시세 50%)</th></tr>
+       <tr class="grouphd"><th class="tier30">청년</th><th class="tier30">대학생·취준생</th>
+           <th class="tier50">청년</th><th class="tier50">대학생·취준생</th></tr>
+     </thead>
+     <tbody>${rows}</tbody>
+   </table></div>
+   <p class="nomedia" style="margin-top:8px">※ 각 칸: <b>보증금</b> / 월 임대료 (만원). 도면상 비품은 참고용이며 구비 여부는 사전점검 시 확인.</p>`;
+  document.getElementById("content").scrollTop=0;
+}
+function select(id){
+  state.sel=id; const b=D.find(x=>x.id===id);
+  renderList(); renderDetail(b);
+  if(window.innerWidth<=820) document.getElementById("sidebar").classList.remove("open");
+}
+
+/* ---------- lightbox ---------- */
+const LB={ b:null, i:0,
+  open(id,i){ this.b=D.find(x=>x.id===id); this.i=i; this.show(); },
+  show(){ const imgs=this.b.media.images; document.getElementById("lbimg").src=uri(imgs[this.i]);
+    document.getElementById("lbcap").textContent=`${this.i+1} / ${imgs.length} · ${this.b.주택명}`;
+    document.getElementById("lb").classList.add("show"); },
+  step(d){ const n=this.b.media.images.length; this.i=(this.i+d+n)%n; this.show(); },
+  hide(){ document.getElementById("lb").classList.remove("show"); } };
+document.addEventListener("keydown",e=>{ if(!document.getElementById("lb").classList.contains("show"))return;
+  if(e.key==="Escape")LB.hide(); if(e.key==="ArrowLeft")LB.step(-1); if(e.key==="ArrowRight")LB.step(1); });
+
+/* ---------- welcome ---------- */
+function welcome(){
+  document.getElementById("content").innerHTML=`<div class="welcome">
+    <h2>🏠 왼쪽에서 주택을 선택하세요</h2>
+    <p>SH 서울주택도시공사 <b>2026년 1차 청년 매입임대주택</b> 목록입니다.<br>
+    ${M.건물수}개 건물 · ${M.호수}호 · ${M.구목록?.length||0}개 자치구.<br>
+    지도의 마커를 클릭하거나 목록에서 건물을 골라 위치·가격·사진을 확인할 수 있습니다.</p></div>`;
+  overview();
+}
+
+/* ---------- wire up ---------- */
+function boot(){
+  document.getElementById("metaline").textContent=`${M.건물수}개 건물 · ${M.호수}호 · 지도 ${M.geocoded}곳`;
+  const gu=document.getElementById("fGu"); (M.구목록||[]).forEach(g=>gu.add(new Option(g,g)));
+  document.querySelectorAll("#segGubun button").forEach(btn=>btn.onclick=()=>{
+    document.querySelectorAll("#segGubun button").forEach(x=>x.classList.remove("on"));
+    btn.classList.add("on"); state.gubun=btn.dataset.v;
+    if(state.gubun==="all"){            // "전체" = 완전 초기화 → 모든 핀 다시 표시
+      state.gu="all"; state.q=""; state.photo=false;
+      document.getElementById("fGu").value="all";
+      document.getElementById("fQ").value="";
+      document.getElementById("fPhoto").checked=false;
+    }
+    state.sel=null; renderList(); welcome();   // 선택 해제 + (필터된) 핀 개요 지도
+  });
+  gu.onchange=e=>{state.gu=e.target.value; refresh();};
+  document.getElementById("fSort").onchange=e=>{state.sort=e.target.value; renderList();};
+  document.getElementById("fQ").oninput=e=>{state.q=e.target.value; refresh();};
+  document.getElementById("fPhoto").onchange=e=>{state.photo=e.target.checked; refresh();};
+  initMap(); renderList(); welcome();
+}
+function refresh(){
+  renderList();
+  if(state.sel!=null && filtered().some(b=>b.id===state.sel)){
+    renderMarkers();                       // 선택 유지(지도엔 항상 전체 핀)
+    markers[state.sel] && markers[state.sel].openPopup();
+  } else {
+    state.sel=null; welcome();             // 선택 없음/필터에서 빠짐 → 전체 개요
+  }
+}
+boot();
+</script>
+</body>
+</html>
